@@ -1,7 +1,6 @@
 package com.pathplanner.lib.path;
 
 import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.trajectory.PathPlannerTrajectory;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
