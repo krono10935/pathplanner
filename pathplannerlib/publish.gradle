@@ -47,38 +47,38 @@ def baseArtifactId = 'PathplannerLib'
 def zipBaseName = "_GROUP_com_pathplanner_lib_ID_${baseArtifactId}-cpp_CLS"
 def javaBaseName = "_GROUP_com_pathplanner_lib_ID_${baseArtifactId}-java_CLS"
 
-task cppHeadersZip(type: Zip) {
-    destinationDirectory = outputsFolder
-    archiveBaseName = zipBaseName
-    archiveClassifier = "headers"
-
-    from(licenseFile) {
-        into '/'
-    }
-
-    from('src/main/native/include') {
-        into '/'
-    }
-}
-
-task cppSourceZip(type: Zip) {
-    destinationDirectory = outputsFolder
-    archiveBaseName = zipBaseName
-    archiveClassifier = "source"
-
-    from(licenseFile) {
-        into '/'
-    }
-
-    from('src/main/native/cpp') {
-        into '/'
-    }
-}
-
-build.dependsOn cppHeadersZip
-addTaskToCopyAllOutputs(cppHeadersZip)
-build.dependsOn cppSourceZip
-addTaskToCopyAllOutputs(cppSourceZip)
+//task cppHeadersZip(type: Zip) {
+//    destinationDirectory = outputsFolder
+//    archiveBaseName = zipBaseName
+//    archiveClassifier = "headers"
+//
+//    from(licenseFile) {
+//        into '/'
+//    }
+//
+//    from('src/main/native/include') {
+//        into '/'
+//    }
+//}
+//
+//task cppSourceZip(type: Zip) {
+//    destinationDirectory = outputsFolder
+//    archiveBaseName = zipBaseName
+//    archiveClassifier = "source"
+//
+//    from(licenseFile) {
+//        into '/'
+//    }
+//
+//    from('src/main/native/cpp') {
+//        into '/'
+//    }
+//}
+//
+//build.dependsOn cppHeadersZip
+//addTaskToCopyAllOutputs(cppHeadersZip)
+//build.dependsOn cppSourceZip
+//addTaskToCopyAllOutputs(cppSourceZip)
 
 task sourcesJar(type: Jar, dependsOn: classes) {
     archiveClassifier = 'sources'
@@ -150,17 +150,17 @@ model {
         def taskList = createComponentZipTasks($.components, ['PathplannerLib'], zipBaseName, Zip, project, includeStandardZipFormat)
 
         publications {
-            cpp(MavenPublication) {
-                taskList.each {
-                    artifact it
-                }
-                artifact cppHeadersZip
-                artifact cppSourceZip
-
-                artifactId = "${baseArtifactId}-cpp"
-                groupId artifactGroupId
-                version pubVersion
-            }
+//            cpp(MavenPublication) {
+//                taskList.each {
+//                    artifact it
+//                }
+//                artifact cppHeadersZip
+//                artifact cppSourceZip
+//
+//                artifactId = "${baseArtifactId}-cpp"
+//                groupId artifactGroupId
+//                version pubVersion
+//            }
 
             java(MavenPublication) {
                 artifact jar

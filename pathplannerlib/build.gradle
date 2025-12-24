@@ -1,5 +1,4 @@
 plugins {
-    id 'cpp'
     id 'java'
     id 'google-test'
     id 'edu.wpi.first.wpilib.repositories.WPILibRepositoriesPlugin' version '2025.0'
@@ -91,36 +90,36 @@ nativeUtils {
     }
 }
 
-model {
-    components {
-        PathplannerLib(NativeLibrarySpec) {
-            sources {
-                cpp {
-                    source {
-                        srcDirs 'src/main/native/cpp'
-                        include '**/*.cpp'
-                    }
-                    exportedHeaders {
-                        srcDirs 'src/main/native/include'
-                    }
-                }
-            }
-            nativeUtils.useRequiredLibrary(it, 'wpilib_shared')
-        }
-    }
-    testSuites {
-        PathplannerLibTest {
-            sources.cpp {
-                source {
-                    srcDir 'src/test/native/cpp'
-                    include '**/*.cpp'
-                }
-            }
-
-            nativeUtils.useRequiredLibrary(it, "wpilib_executable_shared", "googletest_static")
-        }
-    }
-}
+//model {
+//    components {
+////        PathplannerLib(NativeLibrarySpec) {
+////            sources {
+////                cpp {
+////                    source {
+////                        srcDirs 'src/main/native/cpp'
+////                        include '**/*.cpp'
+////                    }
+////                    exportedHeaders {
+////                        srcDirs 'src/main/native/include'
+////                    }
+////                }
+////            }
+////            nativeUtils.useRequiredLibrary(it, 'wpilib_shared')
+////        }
+//    }
+//    testSuites {
+//        PathplannerLibTest {
+//            sources.cpp {
+//                source {
+//                    srcDir 'src/test/native/cpp'
+//                    include '**/*.cpp'
+//                }
+//            }
+//
+//            nativeUtils.useRequiredLibrary(it, "wpilib_executable_shared", "googletest_static")
+//        }
+//    }
+//}
 
 spotless {
     java {
@@ -134,13 +133,13 @@ spotless {
         trimTrailingWhitespace()
         endWithNewline()
     }
-    cpp {
-        target fileTree('.') {
-            include '**/*.cpp', '**/*.h'
-            exclude '**/build/**', '**/build-*/**'
-        }
-        eclipseCdt()
-    }
+//    cpp {
+//        target fileTree('.') {
+//            include '**/*.cpp', '**/*.h'
+//            exclude '**/build/**', '**/build-*/**'
+//        }
+//        eclipseCdt()
+//    }
     groovyGradle {
         target fileTree('.') {
             include '**/*.gradle'
