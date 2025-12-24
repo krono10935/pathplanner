@@ -13,20 +13,36 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.RobotState;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import org.littletonrobotics.junction.Logger;
 
 import java.util.function.BooleanSupplier;
 
+/**
+ * Drive to pose will finish a pathplanner path until the target pose is reached, it uses a vectored PID controller instead of a xy controller.
+ * Any constants are stored inside {@link DriveToPoseConstants}.
+ */
 public class DriveToPose extends Command {
+    /**
+     * all the constants from the DriveToPoseConstants
+     */
     private static DriveToPoseConstants constants;
+    /**
+     * if configured
+     */
     private static boolean configured = false;
 
-    public static void configure(DriveToPoseConstants driveToPoseConstants) {
+    /**
+     * this function needs to be called before any paths are made.
+     * @param constants the DriveToPose constants.
+     */
+    public static void configure(DriveToPoseConstants constants) {
         if (configured) {
             throw new IllegalStateException("Already configured");
         }
-        constants = driveToPoseConstants;
+        DriveToPose.constants = constants;
         configured = true;
 
+        logEmpty();
     }
 
     /**
@@ -53,29 +69,39 @@ public class DriveToPose extends Command {
      * absolute value of the linear error
      */
     private double absPoseError;
+    /**
+     * the goal position
+     */
+    private final Pose2d goalPose;
 
-    private final Pose2d goalPose_;
-
-
+    /**
+     * creates the DriveToPose with a given goal pose.
+     * @param goalPose the goal pose
+     */
     public DriveToPose(Pose2d goalPose) {
         if(!configured) {throw new IllegalStateException("Not configured!");}
 
-        this.goalPose_ = goalPose;
+        this.goalPose = goalPose;
         
-        constants.ANGULAR_PID_GAINS.enableContinuousInput(-Math.PI, Math.PI);
+        DriveToPoseConstants.ANGULAR_PID_GAINS.enableContinuousInput(-Math.PI, Math.PI);
     }
 
+    /**
+     * creates a command with a given path and the DriveToPose (if set to true)
+     * @param path the PathPlanner path
+     * @return the full command where the PathPlanner is integrated with the DriveToPose (if set to true)
+     */
     public static Command createPathToPose(PathPlannerPath path) {
         Command pathCommand = AutoBuilder.followPath(path);
 
-        if(!constants.useDriveToPose) return pathCommand;
+        if(!constants.useDriveToPose()) return pathCommand;
 
         SequentialCommandGroup sequence = new SequentialCommandGroup();
 
         var finalPose = path.getPoint(path.numPoints() - 1);
 
-        BooleanSupplier isClose = () -> constants.poseSupplier.get().getTranslation().getDistance(finalPose.position) <
-                constants.DISTANCE_TO_STOP_PP;
+        BooleanSupplier isClose = () -> constants.poseSupplier().get().getTranslation().getDistance(finalPose.position) <
+                DriveToPoseConstants.DISTANCE_TO_STOP_PP;
 
         sequence.addCommands(pathCommand.until(isClose),
                 new DriveToPose(new Pose2d(finalPose.position, finalPose.rotationTarget.rotation())));
@@ -89,36 +115,60 @@ public class DriveToPose extends Command {
      */
     private void resetState(){
         driveProfile = new TrapezoidProfile(RobotState.isAutonomous() ?
-                constants.LINEAR_AUTO_CONSTRAINTS :
-                constants.LINEAR_TELE_CONSTRAINTS);
+                DriveToPoseConstants.LINEAR_AUTO_CONSTRAINTS :
+                DriveToPoseConstants.LINEAR_TELE_CONSTRAINTS);
 
-        constants.LINEAR_PID_GAINS.reset();
+        DriveToPoseConstants.LINEAR_PID_GAINS.reset();
 
-        constants.ANGULAR_PID_GAINS.setConstraints(RobotState.isAutonomous() ?
-                constants.ANGLE_AUTO_CONSTRAINTS:
-                constants.ANGLE_TELE_CONSTRAINTS);
+        DriveToPoseConstants.ANGULAR_PID_GAINS.setConstraints(RobotState.isAutonomous() ?
+                DriveToPoseConstants.ANGLE_AUTO_CONSTRAINTS:
+                DriveToPoseConstants.ANGLE_TELE_CONSTRAINTS);
 
-        var speeds = ChassisSpeeds.fromFieldRelativeSpeeds(constants.speedsSupplier.get(), constants.poseSupplier.get().getRotation());
+        var speeds = ChassisSpeeds.fromRobotRelativeSpeeds(constants.speedsSupplier().get(), constants.poseSupplier().get().getRotation());
 
-        constants.ANGULAR_PID_GAINS.reset(new TrapezoidProfile.State(constants.poseSupplier.get().getRotation().getRadians(), speeds.omegaRadiansPerSecond));
+        DriveToPoseConstants.ANGULAR_PID_GAINS.reset(
+                new TrapezoidProfile.State(constants.poseSupplier().get().getRotation().getRadians(), speeds.omegaRadiansPerSecond));
 
-        lastSetPoint = constants.poseSupplier.get().getTranslation();
+        lastSetPoint = constants.poseSupplier().get().getTranslation();
 
         lastSetpointVelocity = VecBuilder.fill(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond);
 
-        var error = constants.poseSupplier.get().relativeTo(goalPose_);
+        var error = constants.poseSupplier().get().relativeTo(goalPose);
 
         absAngleError = Math.abs(error.getRotation().getRadians());
 
         absPoseError = error.getTranslation().getNorm();
     }
+
+    /**
+     * log every log with empty value/0.
+     */
+    private static void logEmpty(){
+        Logger.recordOutput("driveToPose/goalPose", new Pose2d());
+        Logger.recordOutput("driveToPose/lastSetPoint", new Pose2d());
+
+        Logger.recordOutput("driveToPose/nextState/position", 0);
+        Logger.recordOutput("driveToPose/nextState/velocity", 0);
+
+        Logger.recordOutput("driveToPose/angularError", 0);
+        Logger.recordOutput("driveToPose/poseError", 0);
+
+        Logger.recordOutput("driveToPose/velocity/total", 0);
+        Logger.recordOutput("driveToPose/velocity/PID", 0);
+        Logger.recordOutput("driveToPose/velocity/feedForward", 0);
+
+        Logger.recordOutput("driveToPose/angularVelocity/total", 0);
+        Logger.recordOutput("driveToPose/angularVelocity/PID", 0);
+        Logger.recordOutput("driveToPose/angularVelocity/feedForward", 0);
+    }
+
     /**
      * The initial subroutine of a command.  Called once when the command is initially scheduled.
      */
     @Override
     public void initialize() {
         resetState();
-        constants.logging.accept("driveToPose/goalPose", goalPose_);
+        Logger.recordOutput("driveToPose/goalPose", goalPose);
     }
 
     /**
@@ -135,11 +185,11 @@ public class DriveToPose extends Command {
         //if the distance from the current pose to the goal is less then a constant then we will not scale the velocity
         //vector according to the direction vector.
         double velocity = profileDirection.norm()
-                <= constants.MIN_DISTANCE_VELOCITY_CORRECTION
+                <= DriveToPoseConstants.MIN_DISTANCE_VELOCITY_CORRECTION
                 ? lastSetpointVelocity.norm()
                 : lastSetpointVelocity.dot(profileDirection) / profileDirection.norm();
 
-        velocity = Math.max(velocity, constants.MIN_SET_POINT_VELOCITY);
+        velocity = Math.max(velocity, DriveToPoseConstants.MIN_SET_POINT_VELOCITY);
 
         TrapezoidProfile.State currentState = new TrapezoidProfile.State(profileDirection.norm(), -velocity);
 
@@ -159,6 +209,8 @@ public class DriveToPose extends Command {
     /**
      * calc the FFScalar for the velocity
      * @param error the distance between the current pose and the goal.
+     * @param minError the minimum value which at and below the function will return 0
+     * @param maxError the maximum value which at and above the function will return 1
      * @return how much should the velocity FF affect the output.
      */
     public double FFScalar(double error, double minError, double maxError) {
@@ -168,17 +220,17 @@ public class DriveToPose extends Command {
 
     @Override
     public void execute() {
-        Pose2d pose = constants.poseSupplier.get();
-        Pose2d goal = goalPose_;
+        Pose2d pose = constants.poseSupplier().get();
+        Pose2d goal = goalPose;
         var poseError = pose.relativeTo(goal);
         absPoseError = poseError.getTranslation().getNorm();
         absAngleError = Math.abs(poseError.getRotation().getRadians());
         var nextState = calcProfile(goal, pose, absPoseError);
 
-        double targetVelocityPID = constants.LINEAR_PID_GAINS.calculate(absPoseError, nextState.position);
+        double targetVelocityPID = DriveToPoseConstants.LINEAR_PID_GAINS.calculate(absPoseError, nextState.position);
 
-        double targetVelocityFF = nextState.velocity * FFScalar(absPoseError, constants.FF_MIN_DISTANCE,
-                constants.FF_MAX_DISTANCE);
+        double targetVelocityFF = nextState.velocity * FFScalar(absPoseError, DriveToPoseConstants.FF_MIN_DISTANCE,
+                DriveToPoseConstants.FF_MAX_DISTANCE);
 
         var errorAngle = pose.getTranslation().minus(goal.getTranslation()).getAngle();
 
@@ -187,67 +239,65 @@ public class DriveToPose extends Command {
         double targetVelocity = targetVelocityPID + targetVelocityFF;
 
 
-        if(absPoseError <= constants.POSE_TOLERANCE)
+        if(absPoseError <= DriveToPoseConstants.POSE_TOLERANCE)
             targetVelocity = 0;
 
         targetVelocity = Math.signum(targetVelocity) * Math.min(Math.abs(targetVelocity),
-                constants.MAX_LINEAR_SPEED);
+                DriveToPoseConstants.MAX_LINEAR_SPEED);
 
         var driveVelocity = new Translation2d(targetVelocity, errorAngle);
 
-        double angularVelocityPID = constants.ANGULAR_PID_GAINS.calculate(pose.getRotation().getRadians(),
+        double angularVelocityPID = DriveToPoseConstants.ANGULAR_PID_GAINS.calculate(pose.getRotation().getRadians(),
                 goal.getRotation().getRadians());
 
-        double angularVelocityFF = constants.ANGULAR_PID_GAINS.getSetpoint().velocity * FFScalar(absAngleError,
-                constants.FF_MIN_ANGLE, constants.FF_MAX_ANGLE);
+        double angularVelocityFF = DriveToPoseConstants.ANGULAR_PID_GAINS.getSetpoint().velocity * FFScalar(absAngleError,
+                DriveToPoseConstants.FF_MIN_ANGLE, DriveToPoseConstants.FF_MAX_ANGLE);
 
         double angularVelocity = angularVelocityPID + angularVelocityFF;
 
 
-        if(absAngleError <= constants.ANGLE_TOLERANCE)
+        if(absAngleError <= DriveToPoseConstants.ANGLE_TOLERANCE)
             angularVelocity = 0;
 
         var speeds = ChassisSpeeds.fromFieldRelativeSpeeds(driveVelocity.getX(), driveVelocity.getY(), angularVelocity,
                 pose.getRotation());
 
-        constants.drive.accept(speeds);
+        constants.drive().accept(speeds);
 
         //Logging
-        constants.logging.accept("driveToPose/lastSetPoint", new Pose2d(lastSetPoint,
-                Rotation2d.fromRadians(constants.ANGULAR_PID_GAINS.getSetpoint().position)));
+        Logger.recordOutput("driveToPose/lastSetPoint", new Pose2d(lastSetPoint,
+                Rotation2d.fromRadians(DriveToPoseConstants.ANGULAR_PID_GAINS.getSetpoint().position)));
 
-        constants.logging.accept("driveToPose/nextState/position", nextState.position);
-        constants.logging.accept("driveToPose/nextState/velocity", nextState.velocity);
+        Logger.recordOutput("driveToPose/nextState/position", nextState.position);
+        Logger.recordOutput("driveToPose/nextState/velocity", nextState.velocity);
 
-        constants.logging.accept("driveToPose/angularError", absAngleError);
-        constants.logging.accept("driveToPose/poseError", absPoseError);
+        Logger.recordOutput("driveToPose/angularError", absAngleError);
+        Logger.recordOutput("driveToPose/poseError", absPoseError);
 
-        constants.logging.accept("driveToPose/velocity/total", targetVelocity);
-        constants.logging.accept("driveToPose/velocity/PID", targetVelocityPID);
-        constants.logging.accept("driveToPose/velocity/feedForward", targetVelocityFF);
+        Logger.recordOutput("driveToPose/velocity/total", targetVelocity);
+        Logger.recordOutput("driveToPose/velocity/PID", targetVelocityPID);
+        Logger.recordOutput("driveToPose/velocity/feedForward", targetVelocityFF);
 
-        constants.logging.accept("driveToPose/angularVelocity/total", angularVelocity);
-        constants.logging.accept("driveToPose/angularVelocity/PID", angularVelocityPID);
-        constants.logging.accept("driveToPose/angularVelocity/feedForward", angularVelocityFF);
-
-
+        Logger.recordOutput("driveToPose/angularVelocity/total", angularVelocity);
+        Logger.recordOutput("driveToPose/angularVelocity/PID", angularVelocityPID);
+        Logger.recordOutput("driveToPose/angularVelocity/feedForward", angularVelocityFF);
 
     }
 
     @Override
     public boolean isFinished() {
-        var speeds = constants.speedsSupplier.get();
+        var speeds = constants.speedsSupplier().get();
         double linearSpeed = Math.hypot(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond);
         double angularSpeed = Math.abs(speeds.omegaRadiansPerSecond);
-        return absAngleError <= constants.ANGLE_TOLERANCE
-                && absPoseError <= constants.POSE_TOLERANCE
-                && linearSpeed <= constants.VELOCITY_TOLERANCE
-                && angularSpeed <= constants.ANGULAR_VELOCITY_TOLERANCE;
+        return absAngleError <= DriveToPoseConstants.ANGLE_TOLERANCE
+                && absPoseError <= DriveToPoseConstants.POSE_TOLERANCE
+                && linearSpeed <= DriveToPoseConstants.VELOCITY_TOLERANCE
+                && angularSpeed <= DriveToPoseConstants.ANGULAR_VELOCITY_TOLERANCE;
     }
 
     @Override
     public void end(boolean interrupted) {
-        constants.drive.accept(new ChassisSpeeds());
+        constants.drive().accept(new ChassisSpeeds());
     }
 
 }
