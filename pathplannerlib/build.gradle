@@ -9,17 +9,37 @@ plugins {
     id 'jacoco'
 }
 
-// WPILib Version
-ext.wpilibVersion = "2026.+"
-ext.advantgeKitVersion = "4.1.2"
+group = 'com.krono10935.pathplanner' // set a stable group
+version = '0.1.0'                    // bump/tag this for JitPack versions
 
 java {
+    withJavadocJar()
+    withSourcesJar()
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
 }
 
+// Optional: publishing block makes coordinates explicit if you want to test locally
+//publishing {
+//    publications {
+//        mavenJava(MavenPublication) {
+//            from components.java
+//            artifactId = 'pathplanner-lib' // optional explicit artifactId
+//        }
+//    }
+//}
+
+// WPILib Version
+ext.wpilibVersion = "2026.+"
+ext.advantgeKitVersion = "4.1.2"
+
+
 repositories {
     mavenCentral()
+    maven{
+        url "https://frcmaven.wpi.edu/artifactory/release/"
+    }
+    maven { url "https://frcmaven.wpi.edu/artifactory/littletonrobotics-mvn-release" }
 }
 if (project.hasProperty('releaseMode')) {
     wpilibRepositories.addAllReleaseRepositories(project)
@@ -28,7 +48,7 @@ if (project.hasProperty('releaseMode')) {
 }
 
 // Apply C++ configuration
-apply from: 'config.gradle'
+//apply from: 'config.gradle'
 
 // Apply Java configuration
 dependencies {
@@ -168,7 +188,7 @@ javadoc {
     }
 }
 
-apply from: 'publish.gradle'
+//apply from: 'publish.gradle'
 
 wrapper {
     gradleVersion '8.11'
