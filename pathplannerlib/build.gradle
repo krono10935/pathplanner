@@ -133,13 +133,13 @@ spotless {
         trimTrailingWhitespace()
         endWithNewline()
     }
-//    cpp {
-//        target fileTree('.') {
-//            include '**/*.cpp', '**/*.h'
-//            exclude '**/build/**', '**/build-*/**'
-//        }
-//        eclipseCdt()
-//    }
+    //    cpp {
+    //        target fileTree('.') {
+    //            include '**/*.cpp', '**/*.h'
+    //            exclude '**/build/**', '**/build-*/**'
+    //        }
+    //        eclipseCdt()
+    //    }
     groovyGradle {
         target fileTree('.') {
             include '**/*.gradle'

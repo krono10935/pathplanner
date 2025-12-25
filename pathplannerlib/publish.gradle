@@ -150,17 +150,17 @@ model {
         def taskList = createComponentZipTasks($.components, ['PathplannerLib'], zipBaseName, Zip, project, includeStandardZipFormat)
 
         publications {
-//            cpp(MavenPublication) {
-//                taskList.each {
-//                    artifact it
-//                }
-//                artifact cppHeadersZip
-//                artifact cppSourceZip
-//
-//                artifactId = "${baseArtifactId}-cpp"
-//                groupId artifactGroupId
-//                version pubVersion
-//            }
+            //            cpp(MavenPublication) {
+            //                taskList.each {
+            //                    artifact it
+            //                }
+            //                artifact cppHeadersZip
+            //                artifact cppSourceZip
+            //
+            //                artifactId = "${baseArtifactId}-cpp"
+            //                groupId artifactGroupId
+            //                version pubVersion
+            //            }
 
             java(MavenPublication) {
                 artifact jar
