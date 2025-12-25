@@ -39,8 +39,8 @@ jobs:
       - name: Build & Test
         run: ./gradlew build
         working-directory: ./pathplannerlib
-          
+
       - name: Generate Javadocs
-  	run: ./gradlew javadoc
-  	working-directory: ./pathplannerlib
+        run: ./gradlew javadoc
+        working-directory: ./pathplannerlib
 
