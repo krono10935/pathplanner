@@ -7,7 +7,7 @@
   "mavenUrls": [
     "https://jitpack.io"
   ],
-  "jsonUrl": "https://captainsoccer.github.io/BasicMotor/BasicMotor-Full.json",
+  "jsonUrl": "https://krono10935.github.io/pathplanner/KronoPlanner.json",
   "javaDependencies": [
     {
       "groupId": "com.github.krono10935",
