@@ -12,7 +12,7 @@
     {
       "groupId": "com.github.krono10935",
       "artifactId": "pathplanner",
-      "version": "5bd149fa23"
+      "version": "1.0.0"
     }
   ],
   "jniDependencies": [
