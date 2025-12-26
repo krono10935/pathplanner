@@ -1,0 +1,27 @@
+{
+  "fileName": "KronoPlanner.json",
+  "name": "Krono Planner",
+  "version": "1.0.0",
+  "uuid": "ae9fd30d-1ca5-4ebb-8e1b-b9a2de7bc695",
+  "frcYear": "2026",
+  "mavenUrls": [
+    "https://jitpack.io"
+  ],
+  "jsonUrl": "https://captainsoccer.github.io/BasicMotor/BasicMotor-Full.json",
+  "javaDependencies": [
+    {
+      "groupId": "com.github.krono10935",
+      "artifactId": "pathplanner",
+      "version": "5bd149fa23"
+    }
+  ],
+  "jniDependencies": [
+
+  ],
+  "nativeDependencies": [
+
+  ],
+  "cppDependencies": [
+
+  ]
+}
