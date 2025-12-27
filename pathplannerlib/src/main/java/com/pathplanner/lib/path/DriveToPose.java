@@ -64,8 +64,6 @@ public class DriveToPose extends Command {
     if (!configured) {
       throw new IllegalStateException("Not configured!");
     }
-
-    DriveToPoseConstants.ANGULAR_PID_GAINS.enableContinuousInput(-Math.PI, Math.PI);
   }
 
   /**
@@ -161,6 +159,8 @@ public class DriveToPose extends Command {
   @Override
   public void initialize() {
     resetState();
+
+    DriveToPoseConstants.ANGULAR_PID_GAINS.enableContinuousInput(-Math.PI, Math.PI);
     Logger.recordOutput("driveToPose/goalPose", goalPose);
   }
 
