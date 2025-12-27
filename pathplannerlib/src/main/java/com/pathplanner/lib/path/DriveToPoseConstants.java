@@ -16,13 +16,11 @@ import java.util.function.Supplier;
  * @param poseSupplier robot pose
  * @param speedsSupplier ChassisSpeeds supplier
  * @param drive ChassisSpeeds consumer
- * @param useDriveToPose if we would use DriveToPose command at the end of the path
  */
 public record DriveToPoseConstants(
     Supplier<Pose2d> poseSupplier,
     Supplier<ChassisSpeeds> speedsSupplier,
-    Consumer<ChassisSpeeds> drive,
-    boolean useDriveToPose) {
+    Consumer<ChassisSpeeds> drive) {
   /** the max linear speed of the robot. */
   public static double MAX_LINEAR_SPEED = 4; // m/s
   /** the distance in which the auto should transfer from PP path to DriveToPose. */

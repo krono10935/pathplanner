@@ -82,7 +82,7 @@ public class DriveToPose extends Command {
   public static Command createPathToPose(PathPlannerPath path) {
     Command pathCommand = AutoBuilder.followPath(path);
 
-    if (!constants.useDriveToPose()) return pathCommand;
+    if (path.getGoalEndState().velocity().baseUnitMagnitude() != 0) return pathCommand;
 
     SequentialCommandGroup sequence = new SequentialCommandGroup();
 
