@@ -27,6 +27,8 @@ public class DriveToPose extends Command {
   /** if configured */
   private static boolean configured = false;
 
+  private static DriveToPose instance;
+
   /**
    * this function needs to be called before any paths are made.
    *
@@ -55,19 +57,13 @@ public class DriveToPose extends Command {
   /** absolute value of the linear error */
   private double absPoseError;
   /** the goal position */
-  private final Pose2d goalPose;
+  private Pose2d goalPose;
 
-  /**
-   * creates the DriveToPose with a given goal pose.
-   *
-   * @param goalPose the goal pose
-   */
-  public DriveToPose(Pose2d goalPose) {
+  /** creates the DriveToPose with a given goal pose. */
+  private DriveToPose() {
     if (!configured) {
       throw new IllegalStateException("Not configured!");
     }
-
-    this.goalPose = goalPose;
 
     DriveToPoseConstants.ANGULAR_PID_GAINS.enableContinuousInput(-Math.PI, Math.PI);
   }
@@ -93,9 +89,15 @@ public class DriveToPose extends Command {
             constants.poseSupplier().get().getTranslation().getDistance(finalPose.position)
                 < DriveToPoseConstants.DISTANCE_TO_STOP_PP;
 
-    sequence.addCommands(
-        pathCommand.until(isClose),
-        new DriveToPose(new Pose2d(finalPose.position, finalPose.rotationTarget.rotation())));
+    Pose2d newGoalPose = new Pose2d(finalPose.position, finalPose.rotationTarget.rotation());
+
+    if (instance == null) {
+      instance = new DriveToPose();
+    }
+
+    Command driveToPose = instance.asProxy().beforeStarting(() -> instance.goalPose = newGoalPose);
+
+    sequence.addCommands(pathCommand.until(isClose), driveToPose);
 
     return sequence;
   }
