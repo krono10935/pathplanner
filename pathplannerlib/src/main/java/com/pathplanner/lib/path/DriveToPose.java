@@ -1,6 +1,7 @@
 package com.pathplanner.lib.path;
 
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.events.EventTrigger;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
@@ -13,6 +14,7 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.RobotState;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import java.util.Objects;
 import java.util.function.BooleanSupplier;
 import org.littletonrobotics.junction.Logger;
 
@@ -29,6 +31,8 @@ public class DriveToPose extends Command {
 
   private static DriveToPose instance;
 
+  private static EventTrigger driveToPoseEvent;
+
   /**
    * this function needs to be called before any paths are made.
    *
@@ -40,6 +44,8 @@ public class DriveToPose extends Command {
     }
     DriveToPose.constants = constants;
     configured = true;
+
+    driveToPoseEvent = new EventTrigger(constants.eventMarkerName());
 
     logEmpty();
   }
@@ -87,6 +93,10 @@ public class DriveToPose extends Command {
             constants.poseSupplier().get().getTranslation().getDistance(finalPose.position)
                 < DriveToPoseConstants.DISTANCE_TO_STOP_PP;
 
+    if (isEventMarker(path)) {
+      isClose = driveToPoseEvent;
+    }
+
     Pose2d newGoalPose = new Pose2d(finalPose.position, finalPose.rotationTarget.rotation());
 
     if (instance == null) {
@@ -98,6 +108,21 @@ public class DriveToPose extends Command {
     sequence.addCommands(pathCommand.until(isClose), driveToPose);
 
     return sequence;
+  }
+
+  private static boolean isEventMarker(PathPlannerPath path) {
+    boolean isEventMarker = false;
+
+    for (EventMarker marker : path.getEventMarkers()) {
+      if (Objects.equals(marker.triggerName(), "driveToPose")) {
+        if (isEventMarker)
+          throw new IllegalArgumentException(
+              "Multiple driveToPose event markers found in path: " + path.name);
+
+        isEventMarker = true;
+      }
+    }
+    return isEventMarker;
   }
 
   /** rests all the variables before starting */
