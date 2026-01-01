@@ -66,11 +66,17 @@ public class DriveToPose extends Command {
   /** the goal position */
   private Pose2d goalPose;
 
+  private final BooleanSupplier isClose;
+
   /** creates the DriveToPose with a given goal pose. */
   private DriveToPose() {
     if (!configured) {
       throw new IllegalStateException("Not configured!");
     }
+    isClose =
+        () ->
+            constants.poseSupplier().get().getTranslation().getDistance(goalPose.getTranslation())
+                < DriveToPoseConstants.DISTANCE_TO_STOP_PP;
   }
 
   /**
@@ -89,14 +95,7 @@ public class DriveToPose extends Command {
 
     var finalPose = path.getPoint(path.numPoints() - 1);
 
-    BooleanSupplier isClose =
-        () ->
-            constants.poseSupplier().get().getTranslation().getDistance(finalPose.position)
-                < DriveToPoseConstants.DISTANCE_TO_STOP_PP;
-
-    if (isEventMarker(path)) {
-      isClose = driveToPoseEvent;
-    }
+    BooleanSupplier startDriveToPose = isEventMarker(path) ? driveToPoseEvent : instance.isClose;
 
     Pose2d newGoalPose = new Pose2d(finalPose.position, finalPose.rotationTarget.rotation());
 
@@ -116,7 +115,7 @@ public class DriveToPose extends Command {
                   }
                 });
 
-    sequence.addCommands(pathCommand.until(isClose), driveToPose);
+    sequence.addCommands(pathCommand.until(startDriveToPose), driveToPose);
 
     return sequence;
   }
@@ -125,7 +124,7 @@ public class DriveToPose extends Command {
     boolean isEventMarker = false;
 
     for (EventMarker marker : path.getEventMarkers()) {
-      if (Objects.equals(marker.triggerName(), "driveToPose")) {
+      if (Objects.equals(marker.triggerName(), constants.eventMarkerName())) {
         if (isEventMarker)
           throw new IllegalArgumentException(
               "Multiple driveToPose event markers found in path: " + path.name);
