@@ -87,6 +87,10 @@ public class DriveToPose extends Command {
    *     true)
    */
   public static Command createPathToPose(PathPlannerPath path) {
+    if (instance == null) {
+      instance = new DriveToPose();
+    }
+
     Command pathCommand = AutoBuilder.followPath(path);
 
     if (path.getGoalEndState().velocity().baseUnitMagnitude() != 0) return pathCommand;
@@ -98,10 +102,6 @@ public class DriveToPose extends Command {
     BooleanSupplier startDriveToPose = isEventMarker(path) ? driveToPoseEvent : instance.isClose;
 
     Pose2d newGoalPose = new Pose2d(finalPose.position, finalPose.rotationTarget.rotation());
-
-    if (instance == null) {
-      instance = new DriveToPose();
-    }
 
     Command driveToPose =
         instance
