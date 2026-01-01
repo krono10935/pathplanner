@@ -2,6 +2,7 @@ package com.pathplanner.lib.path;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.events.EventTrigger;
+import com.pathplanner.lib.util.FlippingUtil;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
@@ -103,7 +104,17 @@ public class DriveToPose extends Command {
       instance = new DriveToPose();
     }
 
-    Command driveToPose = instance.asProxy().beforeStarting(() -> instance.goalPose = newGoalPose);
+    Command driveToPose =
+        instance
+            .asProxy()
+            .beforeStarting(
+                () -> {
+                  if (AutoBuilder.shouldFlip()) {
+                    instance.goalPose = FlippingUtil.flipFieldPose(newGoalPose);
+                  } else {
+                    instance.goalPose = newGoalPose;
+                  }
+                });
 
     sequence.addCommands(pathCommand.until(isClose), driveToPose);
 
