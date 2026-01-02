@@ -174,19 +174,19 @@ public class DriveToPose extends Command {
     Logger.recordOutput("driveToPose/goalPose", new Pose2d());
     Logger.recordOutput("driveToPose/lastSetPoint", new Pose2d());
 
-    Logger.recordOutput("driveToPose/nextState/position", 0);
-    Logger.recordOutput("driveToPose/nextState/velocity", 0);
+    Logger.recordOutput("driveToPose/nextState/position", 0.0);
+    Logger.recordOutput("driveToPose/nextState/velocity", 0.0);
 
-    Logger.recordOutput("driveToPose/angularError", 0);
-    Logger.recordOutput("driveToPose/poseError", 0);
+    Logger.recordOutput("driveToPose/angularError", 0.0);
+    Logger.recordOutput("driveToPose/poseError", 0.0);
 
-    Logger.recordOutput("driveToPose/velocity/total", 0);
-    Logger.recordOutput("driveToPose/velocity/PID", 0);
-    Logger.recordOutput("driveToPose/velocity/feedForward", 0);
+    Logger.recordOutput("driveToPose/velocity/total", 0.0);
+    Logger.recordOutput("driveToPose/velocity/PID", 0.0);
+    Logger.recordOutput("driveToPose/velocity/feedForward", 0.0);
 
-    Logger.recordOutput("driveToPose/angularVelocity/total", 0);
-    Logger.recordOutput("driveToPose/angularVelocity/PID", 0);
-    Logger.recordOutput("driveToPose/angularVelocity/feedForward", 0);
+    Logger.recordOutput("driveToPose/angularVelocity/total", 0.0);
+    Logger.recordOutput("driveToPose/angularVelocity/PID", 0.0);
+    Logger.recordOutput("driveToPose/angularVelocity/feedForward", 0.0);
   }
 
   /** The initial subroutine of a command. Called once when the command is initially scheduled. */
