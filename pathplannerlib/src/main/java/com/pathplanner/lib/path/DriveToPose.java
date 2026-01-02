@@ -94,13 +94,21 @@ public class DriveToPose extends Command {
 
     Command pathCommand = AutoBuilder.followPath(path);
 
-    if (path.getGoalEndState().velocity().baseUnitMagnitude() != 0) return pathCommand;
+    boolean hasEventMarker = isEventMarker(path);
+
+    if (path.getGoalEndState().velocity().baseUnitMagnitude() != 0) {
+      if (hasEventMarker)
+        throw new IllegalArgumentException(
+            "driveToPose event marker cannot be used with non-zero end velocity in path: "
+                + path.name);
+      return pathCommand;
+    }
 
     SequentialCommandGroup sequence = new SequentialCommandGroup();
 
     var finalPose = path.getPoint(path.numPoints() - 1);
 
-    BooleanSupplier startDriveToPose = isEventMarker(path) ? driveToPoseEvent : instance.isClose;
+    BooleanSupplier startDriveToPose = hasEventMarker ? driveToPoseEvent : instance.isClose;
 
     Pose2d newGoalPose = new Pose2d(finalPose.position, finalPose.rotationTarget.rotation());
 
