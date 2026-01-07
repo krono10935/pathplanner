@@ -30,9 +30,9 @@ public class DriveToPose extends Command {
   private static DriveToPoseConstants constants;
   /** if configured */
   private static boolean configured = false;
-
+  /** the singleton instance of DriveToPose */
   private static DriveToPose instance;
-
+  /** the event trigger for the driveToPose event marker */
   private static EventTrigger driveToPoseEvent;
 
   /**
@@ -66,7 +66,10 @@ public class DriveToPose extends Command {
   private double absPoseError;
   /** the goal position */
   private Pose2d goalPose;
-
+  /**
+   * whether the robot is close enough to the goal pose so he can stop PP and start DriveToPose
+   * command
+   */
   private final BooleanSupplier isClose;
 
   /** creates the DriveToPose with a given goal pose. */
@@ -127,6 +130,38 @@ public class DriveToPose extends Command {
     return sequence;
   }
 
+  /**
+   * creates a command with a given goal pose and path finding command.
+   *
+   * @param goalPose the target pose
+   * @param distanceToStopPP the distance in which the auto should transfer from PP path to
+   *     DriveToPose.
+   * @param pathFindingCommand the path finding command to follow until close enough to the goal
+   *     pose.
+   * @return the full command where the PathPlanner is integrated with the DriveToPose.
+   */
+  public static Command createPathFindingToPose(
+      Pose2d goalPose, double distanceToStopPP, Command pathFindingCommand) {
+    if (instance == null) {
+      instance = new DriveToPose();
+    }
+
+    SequentialCommandGroup sequence = new SequentialCommandGroup();
+
+    BooleanSupplier isClose =
+        () ->
+            constants.poseSupplier().get().getTranslation().getDistance(goalPose.getTranslation())
+                < distanceToStopPP;
+
+    sequence.addCommands(
+        new InstantCommand(() -> instance.goalPose = goalPose),
+        pathFindingCommand.until(isClose),
+        instance.asProxy());
+
+    return sequence;
+  }
+
+  /** checks if the path has the event marker for DriveToPose */
   private static boolean isEventMarker(PathPlannerPath path) {
     boolean isEventMarker = false;
 

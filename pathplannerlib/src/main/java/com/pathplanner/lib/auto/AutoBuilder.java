@@ -5,6 +5,8 @@ import static edu.wpi.first.units.Units.MetersPerSecond;
 import com.pathplanner.lib.commands.*;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PathFollowingController;
+import com.pathplanner.lib.path.DriveToPose;
+import com.pathplanner.lib.path.DriveToPoseConstants;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
 import com.pathplanner.lib.util.DriveFeedforwards;
@@ -45,6 +47,8 @@ public class AutoBuilder {
    * @param robotConfig The robot configuration
    * @param shouldFlipPath Supplier that determines if paths should be flipped to the other side of
    *     the field. This will maintain a global blue alliance origin.
+   * @param eventMarkerName the name of the event marker that marks where the DriveToPose command
+   *     starts
    * @param driveRequirements the subsystem requirements for the robot's drive train
    */
   public static void configure(
@@ -55,11 +59,19 @@ public class AutoBuilder {
       PathFollowingController controller,
       RobotConfig robotConfig,
       BooleanSupplier shouldFlipPath,
+      String eventMarkerName,
       Subsystem... driveRequirements) {
     if (globals.configured) {
       DriverStation.reportError(
           "Auto builder has already been configured. This is likely in error.", true);
     }
+
+    DriveToPose.configure(
+        new DriveToPoseConstants(
+            poseSupplier,
+            robotRelativeSpeedsSupplier,
+            (drive) -> output.accept(drive, DriveFeedforwards.zeros(4)),
+            eventMarkerName));
 
     globals.pathFollowingCommandBuilder =
         (path) ->
@@ -117,6 +129,8 @@ public class AutoBuilder {
    * @param robotConfig The robot configuration
    * @param shouldFlipPath Supplier that determines if paths should be flipped to the other side of
    *     the field. This will maintain a global blue alliance origin.
+   * @param eventMarkerName the name of the event marker that marks where the DriveToPose command
+   *     starts.
    * @param driveRequirements the subsystem requirements for the robot's drive train
    */
   public static void configure(
@@ -127,6 +141,7 @@ public class AutoBuilder {
       PathFollowingController controller,
       RobotConfig robotConfig,
       BooleanSupplier shouldFlipPath,
+      String eventMarkerName,
       Subsystem... driveRequirements) {
     configure(
         poseSupplier,
@@ -136,6 +151,7 @@ public class AutoBuilder {
         controller,
         robotConfig,
         shouldFlipPath,
+        eventMarkerName,
         driveRequirements);
   }
 
@@ -282,16 +298,37 @@ public class AutoBuilder {
    * @param pose The pose to pathfind to
    * @param constraints The constraints to use while pathfinding
    * @param goalEndVelocity The goal end velocity of the robot when reaching the target pose
+   * @param distanceToStopPP The distance in which the auto should transfer from PP path to
+   *     DriveToPose
    * @return A command to pathfind to a given pose
    */
   public static Command pathfindToPose(
-      Pose2d pose, PathConstraints constraints, double goalEndVelocity) {
+      Pose2d pose, PathConstraints constraints, double goalEndVelocity, double distanceToStopPP) {
     if (!isPathfindingConfigured()) {
       throw new AutoBuilderException(
           "Auto builder was used to build a pathfinding command before being configured");
     }
 
-    return globals.pathfindToPoseCommandBuilder.apply(pose, constraints, goalEndVelocity);
+    Command path = globals.pathfindToPoseCommandBuilder.apply(pose, constraints, goalEndVelocity);
+
+    if (goalEndVelocity != 0) return path;
+
+    return DriveToPose.createPathFindingToPose(pose, distanceToStopPP, path);
+  }
+
+  /**
+   * Build a command to pathfind to a given pose. If not using a holonomic drivetrain, the pose
+   * rotation and rotation delay distance will have no effect.
+   *
+   * @param pose The pose to pathfind to
+   * @param constraints The constraints to use while pathfinding
+   * @param goalEndVelocity The goal end velocity of the robot when reaching the target pose
+   * @return A command to pathfind to a given pose
+   */
+  public static Command pathfindToPose(
+      Pose2d pose, PathConstraints constraints, double goalEndVelocity) {
+    return pathfindToPose(
+        pose, constraints, goalEndVelocity, DriveToPoseConstants.DISTANCE_TO_STOP_PP);
   }
 
   /**
