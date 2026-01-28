@@ -66,6 +66,9 @@ public class DriveToPose extends Command {
   private double absPoseError;
   /** the goal position */
   private Pose2d goalPose;
+
+  private TrapezoidProfile.State nextState;
+
   /**
    * whether the robot is close enough to the goal pose so he can stop PP and start DriveToPose
    * command
@@ -261,8 +264,9 @@ public class DriveToPose extends Command {
             ? lastSetpointVelocity.norm()
             : lastSetpointVelocity.dot(profileDirection) / profileDirection.norm();
 
-    velocity = Math.max(velocity, DriveToPoseConstants.MIN_SET_POINT_VELOCITY);
-
+    if(velocity <= DriveToPoseConstants.MIN_SET_POINT_VELOCITY)
+      velocity = -nextState.velocity;
+    
     TrapezoidProfile.State currentState =
         new TrapezoidProfile.State(profileDirection.norm(), -velocity);
 
@@ -299,7 +303,7 @@ public class DriveToPose extends Command {
     var poseError = pose.relativeTo(goal);
     absPoseError = poseError.getTranslation().getNorm();
     absAngleError = Math.abs(poseError.getRotation().getRadians());
-    var nextState = calcProfile(goal, pose, absPoseError);
+    nextState = calcProfile(goal, pose, absPoseError);
 
     double targetVelocityPID =
         DriveToPoseConstants.LINEAR_PID_GAINS.calculate(absPoseError, nextState.position);
