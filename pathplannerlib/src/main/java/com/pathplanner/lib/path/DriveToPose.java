@@ -67,7 +67,7 @@ public class DriveToPose extends Command {
   /** the goal position */
   private Pose2d goalPose;
 
-  private TrapezoidProfile.State nextState;
+  private TrapezoidProfile.State nextState = new TrapezoidProfile.State();
 
   /** creates the DriveToPose with a given goal pose. */
   private DriveToPose() {
