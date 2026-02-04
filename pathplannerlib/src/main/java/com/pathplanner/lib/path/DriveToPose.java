@@ -1,6 +1,7 @@
 package com.pathplanner.lib.path;
 
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.commands.FollowPathCommand;
 import com.pathplanner.lib.events.EventTrigger;
 import com.pathplanner.lib.util.FlippingUtil;
 import edu.wpi.first.math.MathUtil;
@@ -37,7 +38,6 @@ public class DriveToPose extends Command {
 
   /**
    * this function needs to be called before any paths are made.
-   *
    * @param constants the DriveToPose constants.
    */
   public static void configure(DriveToPoseConstants constants) {
@@ -69,21 +69,11 @@ public class DriveToPose extends Command {
 
   private TrapezoidProfile.State nextState;
 
-  /**
-   * whether the robot is close enough to the goal pose so he can stop PP and start DriveToPose
-   * command
-   */
-  private final BooleanSupplier isClose;
-
   /** creates the DriveToPose with a given goal pose. */
   private DriveToPose() {
     if (!configured) {
       throw new IllegalStateException("Not configured!");
     }
-    isClose =
-        () ->
-            constants.poseSupplier().get().getTranslation().getDistance(goalPose.getTranslation())
-                < DriveToPoseConstants.DISTANCE_TO_STOP_PP;
   }
 
   /**
@@ -98,7 +88,7 @@ public class DriveToPose extends Command {
       instance = new DriveToPose();
     }
 
-    Command pathCommand = AutoBuilder.followPath(path);
+    var pathCommand = AutoBuilder.followPath(path);
 
     boolean hasEventMarker = isEventMarker(path);
 
@@ -114,7 +104,13 @@ public class DriveToPose extends Command {
 
     var finalPose = path.getPoint(path.numPoints() - 1);
 
-    BooleanSupplier startDriveToPose = hasEventMarker ? driveToPoseEvent : instance.isClose;
+    var trajectory = (FollowPathCommand) pathCommand;
+
+    double endTime = trajectory.getTotalTime() - DriveToPoseConstants.TIME_TO_STOP_PP;
+
+    BooleanSupplier isClose = () -> endTime <= trajectory.getCurrentPathTime();
+
+    BooleanSupplier startDriveToPose = hasEventMarker ? driveToPoseEvent : isClose;
 
     Pose2d newGoalPose = new Pose2d(finalPose.position, finalPose.rotationTarget.rotation());
 
@@ -266,7 +262,7 @@ public class DriveToPose extends Command {
 
     if(velocity <= DriveToPoseConstants.MIN_SET_POINT_VELOCITY)
       velocity = -nextState.velocity;
-    
+
     TrapezoidProfile.State currentState =
         new TrapezoidProfile.State(profileDirection.norm(), -velocity);
 

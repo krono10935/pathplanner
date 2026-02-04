@@ -26,8 +26,10 @@ public record DriveToPoseConstants(
     String eventMarkerName) {
   /** the max linear speed of the robot. */
   public static double MAX_LINEAR_SPEED = 4; // m/s
-  /** the distance in which the auto should transfer from PP path to DriveToPose. */
+  /** the distance in which the auto should transfer from PP path to DriveToPose (only works on path on the fly). */
   public static double DISTANCE_TO_STOP_PP = 0.751; // m
+  /** the time in which the auto should transfer from PP to DriveToPose (only works on normal paths). */
+  public static double TIME_TO_STOP_PP = 0.5;
   /** the linear Trapezoid Profile constraints for autonomous */
   public static TrapezoidProfile.Constraints LINEAR_AUTO_CONSTRAINTS =
       new TrapezoidProfile.Constraints(4, 1);

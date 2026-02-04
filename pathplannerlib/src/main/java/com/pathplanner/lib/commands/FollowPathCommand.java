@@ -200,6 +200,22 @@ public class FollowPathCommand extends Command {
   }
 
   /**
+   *
+   * @return the total time of the path.
+   */
+  public double getTotalTime(){
+    return trajectory.getTotalTimeSeconds();
+  }
+
+  /**
+   *
+   * @return the current time of the path.
+   */
+  public double getCurrentPathTime(){
+    return timer.get();
+  }
+
+  /**
    * Create a command to warmup on-the-fly generation, replanning, and the path following command
    *
    * @return Path following warmup command
